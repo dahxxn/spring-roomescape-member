@@ -20,7 +20,7 @@ public record ReservationDetailDto(
                 reservation.id(),
                 reservation.name(),
                 reservation.date(),
-                reservation.time(),
+                reservation.time().startAt(),
                 ThemeDetailDto.from(reservation.theme()),
                 reservation.status()
         );

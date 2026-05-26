@@ -88,7 +88,7 @@ class ReservationServiceTest {
         // then
         assertThat(actual).hasSize(4);
         assertThat(actual).isSortedAccordingTo(
-                Comparator.comparing(Reservation::date).thenComparing(Reservation::time));
+                Comparator.comparing(Reservation::date).thenComparing(r -> r.time().startAt()));
     }
 
     @Test
@@ -142,7 +142,7 @@ class ReservationServiceTest {
         // given
         Reservation pastReservation = Reservation.load(
                 null, "한다", LocalDate.of(2000, 1, 1),
-                reservationTime1.startAt(),
+                reservationTime1,
                 theme1, ReservationStatus.RESERVED);
         Reservation saved = reservationRepository.save(pastReservation);
 
@@ -162,7 +162,7 @@ class ReservationServiceTest {
 
         // then
         assertThat(actual.date()).isEqualTo(date2);
-        assertThat(actual.time()).isEqualTo(reservationTime2.startAt());
+        assertThat(actual.time()).isEqualTo(reservationTime2);
     }
 
     @Test
@@ -170,7 +170,7 @@ class ReservationServiceTest {
     void change_past_reservation() {
         // given
         Reservation pastReservation = Reservation.load(
-                null, "한다", LocalDate.of(2000, 1, 1), reservationTime1.startAt(), theme1, ReservationStatus.RESERVED);
+                null, "한다", LocalDate.of(2000, 1, 1), reservationTime1, theme1, ReservationStatus.RESERVED);
         Reservation saved = reservationRepository.save(pastReservation);
 
         // when & then

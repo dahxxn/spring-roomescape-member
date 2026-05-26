@@ -7,7 +7,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,18 +53,18 @@ class ReservationRepositoryTest {
     void findAllByName() {
         // given
         List<Reservation> reservations = saveAll(
-                List.of(Reservation.create(name, date1, reservationTime1.startAt(), theme),
-                        Reservation.create(name, date1, reservationTime2.startAt(), theme),
-                        Reservation.create(name, date2, reservationTime1.startAt(), theme),
-                        Reservation.create(name, date2, reservationTime2.startAt(), theme))
+                List.of(Reservation.create(name, date1, reservationTime1, theme),
+                        Reservation.create(name, date1, reservationTime2, theme),
+                        Reservation.create(name, date2, reservationTime1, theme),
+                        Reservation.create(name, date2, reservationTime2, theme))
         );
-        reservations.sort(Comparator.comparing(Reservation::date).thenComparing(Reservation::time));
+        reservations.sort(Comparator.comparing(Reservation::date).thenComparing(r -> r.time().startAt()));
 
         // when
         List<Reservation> actual = jdbcReservationRepository.findAllByNameOrderByDateAndTime(name);
 
         // then
-        Assertions.assertThat(actual)
+        assertThat(actual)
                 .usingRecursiveComparison()
                 .isEqualTo(reservations);
     }
@@ -75,11 +74,11 @@ class ReservationRepositoryTest {
     void existsByDateAndTimeAndThemeId_excludeSelf() {
         // given
         Reservation saved = jdbcReservationRepository.save(
-                Reservation.create(name, date1, reservationTime1.startAt(), theme));
+                Reservation.create(name, date1, reservationTime1, theme));
 
         // when & then
-        assertThat(jdbcReservationRepository.existsByDateAndTimeAndThemeId(
-                date1, reservationTime1.startAt(), theme.id(), saved.id(), ReservationStatus.RESERVED))
+        assertThat(jdbcReservationRepository.existsByDateAndTimeIdAndThemeId(
+                date1, reservationTime1.id(), theme.id(), saved.id(), ReservationStatus.RESERVED))
                 .isFalse();
     }
 
@@ -88,13 +87,13 @@ class ReservationRepositoryTest {
     void existsByDateAndTimeAndThemeId_excludeSelf_otherExists() {
         // given
         Reservation saved = jdbcReservationRepository.save(
-                Reservation.create(name, date1, reservationTime1.startAt(), theme));
+                Reservation.create(name, date1, reservationTime1, theme));
         jdbcReservationRepository.save(
-                Reservation.create("브라운", date1, reservationTime2.startAt(), theme));
+                Reservation.create("브라운", date1, reservationTime2, theme));
 
         // when & then
-        assertThat(jdbcReservationRepository.existsByDateAndTimeAndThemeId(
-                date1, reservationTime2.startAt(), theme.id(), saved.id(), ReservationStatus.RESERVED))
+        assertThat(jdbcReservationRepository.existsByDateAndTimeIdAndThemeId(
+                date1, reservationTime2.id(), theme.id(), saved.id(), ReservationStatus.RESERVED))
                 .isTrue();
     }
 

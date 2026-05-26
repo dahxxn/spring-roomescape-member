@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS theme
     id            BIGINT       NOT NULL AUTO_INCREMENT,
     name          VARCHAR(255) NOT NULL,
     description   VARCHAR(255) NOT NULL,
-    thumbnail_url TEXT NOT NULL,
+    thumbnail_url TEXT         NOT NULL,
     is_active     BOOLEAN      NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id)
 );
@@ -27,10 +27,11 @@ CREATE TABLE IF NOT EXISTS reservation
     id       BIGINT       NOT NULL AUTO_INCREMENT,
     name     VARCHAR(255) NOT NULL,
     date     DATE         NOT NULL,
-    start_at TIME         NOT NULL,
+    time_id  BIGINT       NOT NULL,
     theme_id BIGINT       NOT NULL,
     status   ENUM('RESERVED', 'CANCELED') NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (theme_id) REFERENCES theme (id),
-    CONSTRAINT uk_reservation_date_time_theme UNIQUE (date, theme_id, start_at)
+    FOREIGN KEY (time_id) REFERENCES reservation_time (id),
+    CONSTRAINT uk_reservation_date_time_theme UNIQUE (date, theme_id, time_id)
 );

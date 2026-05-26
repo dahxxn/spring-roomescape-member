@@ -84,14 +84,16 @@ public abstract class IntegrationTestSupport {
 
     protected Long savePastReservation(String name, LocalDate date, String startAt, Long themeId) {
         jdbcTemplate.update(
-                "INSERT INTO reservation (name, date, start_at, theme_id, status) VALUES (?, ?, ?, ?, ?)",
+                """
+                INSERT INTO reservation (name, date, time_id, theme_id, status)
+                VALUES (?, ?, (SELECT id FROM reservation_time WHERE start_at = ?), ?, ?)
+                """,
                 name,
                 date,
                 startAt,
                 themeId,
                 "RESERVED"
         );
-
         return jdbcTemplate.queryForObject("SELECT MAX(id) FROM reservation", Long.class);
     }
 }

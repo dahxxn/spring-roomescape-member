@@ -27,35 +27,64 @@ MERGE INTO theme (name, description, thumbnail_url, is_active) KEY (name)
     VALUES ('유령 호텔', '폐쇄된 호텔에서 벌어진 미스터리한 사건을 해결하세요.',
     'https://images.unsplash.com/photo-1566073771259-6a8506099945', true);
 
-INSERT INTO reservation (name, date, start_at, theme_id, status)
+INSERT INTO reservation (name, date, time_id, theme_id, status)
 VALUES
-    ('김민준', DATEADD('DAY', 0, CURRENT_DATE), '11:00:00',
+    ('김민준', DATEADD('DAY', 0, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '11:00:00'),
      (SELECT id FROM theme WHERE name = '잠겨버린 연구실'), 'RESERVED'),
-    ('이서연', DATEADD('DAY', 0, CURRENT_DATE), '12:00:00',
+
+    ('이서연', DATEADD('DAY', 0, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '12:00:00'),
      (SELECT id FROM theme WHERE name = '잠겨버린 연구실'), 'RESERVED'),
-    ('박지후', DATEADD('DAY', 0, CURRENT_DATE), '13:00:00',
+
+    ('박지후', DATEADD('DAY', 0, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '13:00:00'),
      (SELECT id FROM theme WHERE name = '사라진 탐정'), 'RESERVED'),
-    ('최하은', DATEADD('DAY', -1, CURRENT_DATE), '11:00:00',
+
+    ('최하은', DATEADD('DAY', -1, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '11:00:00'),
      (SELECT id FROM theme WHERE name = '잠겨버린 연구실'), 'RESERVED'),
-    ('정도윤', DATEADD('DAY', -1, CURRENT_DATE), '14:00:00',
+
+    ('정도윤', DATEADD('DAY', -1, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '14:00:00'),
      (SELECT id FROM theme WHERE name = '고대 유적의 비밀'), 'RESERVED'),
-    ('한지민', DATEADD('DAY', -1, CURRENT_DATE), '15:00:00',
+
+    ('한지민', DATEADD('DAY', -1, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '15:00:00'),
      (SELECT id FROM theme WHERE name = '사라진 탐정'), 'RESERVED'),
-    ('윤서준', DATEADD('DAY', -1, CURRENT_DATE), '16:00:00',
+
+    ('윤서준', DATEADD('DAY', -1, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '16:00:00'),
      (SELECT id FROM theme WHERE name = '잠겨버린 연구실'), 'RESERVED'),
-    ('오지아', DATEADD('DAY', -2, CURRENT_DATE), '17:00:00',
+
+    ('오지아', DATEADD('DAY', -2, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '17:00:00'),
      (SELECT id FROM theme WHERE name = '잠겨버린 연구실'), 'RESERVED'),
-    ('강민재', DATEADD('DAY', -2, CURRENT_DATE), '18:00:00',
+
+    ('강민재', DATEADD('DAY', -2, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '18:00:00'),
      (SELECT id FROM theme WHERE name = '고대 유적의 비밀'), 'RESERVED'),
-    ('신예린', DATEADD('DAY', -3, CURRENT_DATE), '11:00:00',
+
+    ('신예린', DATEADD('DAY', -3, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '11:00:00'),
      (SELECT id FROM theme WHERE name = '사라진 탐정'), 'RESERVED'),
-    ('송우석', DATEADD('DAY', -3, CURRENT_DATE), '19:00:00',
+
+    ('송우석', DATEADD('DAY', -3, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '19:00:00'),
      (SELECT id FROM theme WHERE name = '잠겨버린 연구실'), 'RESERVED'),
-    ('장하준', DATEADD('DAY', -3, CURRENT_DATE), '20:00:00',
+
+    ('장하준', DATEADD('DAY', -3, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '20:00:00'),
      (SELECT id FROM theme WHERE name = '유령 호텔'), 'RESERVED'),
-    ('임수아', DATEADD('DAY', -4, CURRENT_DATE), '12:00:00',
+
+    ('임수아', DATEADD('DAY', -4, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '12:00:00'),
      (SELECT id FROM theme WHERE name = '잠겨버린 연구실'), 'RESERVED'),
-    ('문지호', DATEADD('DAY', -4, CURRENT_DATE), '13:00:00',
+
+    ('문지호', DATEADD('DAY', -4, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '13:00:00'),
      (SELECT id FROM theme WHERE name = '고대 유적의 비밀'), 'RESERVED'),
-    ('백서윤', DATEADD('DAY', -4, CURRENT_DATE), '21:00:00',
+
+    ('백서윤', DATEADD('DAY', -4, CURRENT_DATE),
+     (SELECT id FROM reservation_time WHERE start_at = '21:00:00'),
      (SELECT id FROM theme WHERE name = '유령 호텔'), 'CANCELED');

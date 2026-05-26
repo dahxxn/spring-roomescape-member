@@ -11,13 +11,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import roomescape.common.exception.DomainValidationException;
 import roomescape.theme.domain.Theme;
+import roomescape.time.domain.ReservationTime;
 
 class ReservationTest {
     private final String name = "한다";
     private final LocalDate date = LocalDate.now().plusMonths(1);
-    private final LocalTime startAt = LocalTime.of(15, 40);
+    private final ReservationTime time = ReservationTime.load(1L, LocalTime.of(15,40));
     private final Theme theme = Theme.load(1L, "테마", "설명", "썸네일", true);
-    private final Reservation reservation = Reservation.load(1L, name, date, startAt, theme, RESERVED);
+    private final Reservation reservation = Reservation.load(1L, name, date, time, theme, RESERVED);
 
     @Test
     @DisplayName("예약 id를 가져온다.")
@@ -62,10 +63,10 @@ class ReservationTest {
     @DisplayName("예약시간을 가져온다.")
     void getTime() {
         //given
-        LocalTime expected = startAt;
+        ReservationTime expected = time;
 
         //when
-        LocalTime actual = reservation.time();
+        ReservationTime actual = reservation.time();
 
         //then
         assertEquals(expected, actual);
@@ -75,7 +76,7 @@ class ReservationTest {
     @DisplayName("두 예약 객체의 동등성을 비교한다.")
     void equals() {
         //given & when
-        Reservation otherReservation = Reservation.load(1L, name, date, startAt, theme, RESERVED);
+        Reservation otherReservation = Reservation.load(1L, name, date, time, theme, RESERVED);
 
         //then
         assertThat(reservation)
@@ -87,7 +88,7 @@ class ReservationTest {
     @DisplayName("아직 DB에 추가되지 않은 예약은 id가 없다.")
     void unpersist_reservation_null_id() {
         //given & when
-        Reservation unpersistReservation = Reservation.create("한다", date, startAt, theme);
+        Reservation unpersistReservation = Reservation.create("한다", date, time, theme);
 
         //then
         assertThat(unpersistReservation.id())
@@ -101,7 +102,7 @@ class ReservationTest {
         LocalDate pastDate = LocalDate.now().minusDays(1);
 
         //then
-        assertThatThrownBy(() -> Reservation.create(name, pastDate, startAt, theme))
+        assertThatThrownBy(() -> Reservation.create(name, pastDate, time, theme))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -111,10 +112,10 @@ class ReservationTest {
         String nullName = null;
         String emptyName = "";
 
-        assertThatThrownBy(() -> Reservation.create(nullName, date, startAt, theme))
+        assertThatThrownBy(() -> Reservation.create(nullName, date, time, theme))
                 .isInstanceOf(DomainValidationException.class);
 
-        assertThatThrownBy(() -> Reservation.create(emptyName, date, startAt, theme))
+        assertThatThrownBy(() -> Reservation.create(emptyName, date, time, theme))
                 .isInstanceOf(DomainValidationException.class);
     }
 }

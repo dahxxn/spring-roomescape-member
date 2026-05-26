@@ -2,7 +2,6 @@ package roomescape.reservation.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +36,6 @@ public class ReservationService {
         this.themeRepository = themeRepository;
     }
 
-
     @Transactional(readOnly = true)
     public List<Reservation> findAll() {
         return reservationRepository.findAll();
@@ -54,11 +52,11 @@ public class ReservationService {
         Theme theme = findThemeByIdOrThrow(themeId);
 
         validateNotClosedDate(date);
-        validateNotAlreadyBookedByOthers(date, reservationTime.startAt(), theme);
+        validateNotAlreadyBooked(date, reservationTime, theme);
         validateUserHasNoReservationAtSameTime(name, date, reservationTime);
 
         Reservation savedReservation = reservationRepository.save(
-                Reservation.create(name, date, reservationTime.startAt(), theme));
+                Reservation.create(name, date, reservationTime, theme));
         log.info("Reservation created: name={}, date={}", name, date);
         return savedReservation;
     }
@@ -79,13 +77,13 @@ public class ReservationService {
         Reservation reservation = findReservationOrThrow(id);
         validateNotPastReservation(reservation, "변경");
 
-        LocalTime newTime = findReservationTimeOrThrow(newTimeId).startAt();
+        ReservationTime newReservationTime = findReservationTimeOrThrow(newTimeId);
         validateNotClosedDate(newDate);
-        validateNotAlreadyBookedByOthers(newDate, newTime, reservation.theme(), id);
+        validateNotAlreadyBookedExcluding(newDate, newReservationTime, reservation.theme(), id);
 
-        Reservation rescheduledReservation = reservation.rescheduled(newDate, newTime);
+        Reservation rescheduledReservation = reservation.rescheduled(newDate, newReservationTime);
         Reservation updatedReservation = reservationRepository.updateDateAndTime(rescheduledReservation);
-        log.info("Reservation changed: id={}, date={}, time={}", updatedReservation.id(), updatedReservation.date(), updatedReservation.time());
+        log.info("Reservation changed: id={}, date={}, time={}", updatedReservation.id(), updatedReservation.date(), updatedReservation.time().startAt());
         return updatedReservation;
     }
 
@@ -117,7 +115,7 @@ public class ReservationService {
     }
 
     private void validateNotPastReservation(Reservation reservation, String action) {
-        if (LocalDateTime.of(reservation.date(), reservation.time()).isBefore(LocalDateTime.now())) {
+        if (LocalDateTime.of(reservation.date(), reservation.time().startAt()).isBefore(LocalDateTime.now())) {
             log.warn("Cannot {} past reservation: id={}", action, reservation.id());
             throw new IllegalArgumentException("이미 지난 예약은 " + action + "할 수 없습니다.");
         }
@@ -130,23 +128,25 @@ public class ReservationService {
         }
     }
 
-    private void validateNotAlreadyBookedByOthers(LocalDate date, LocalTime time, Theme theme) {
-        if (reservationRepository.existsByDateAndTimeAndThemeId(date, time, theme.id(), ReservationStatus.RESERVED)) {
-            log.warn("Reservation already exists: date={}, time={}, theme={}", date, time, theme.name());
+    private void validateNotAlreadyBooked(LocalDate date, ReservationTime reservationTime, Theme theme) {
+        if (reservationRepository.existsByDateAndTimeIdAndThemeId(
+                date, reservationTime.id(), theme.id(), ReservationStatus.RESERVED)) {
+            log.warn("Reservation already exists: date={}, time={}, theme={}", date, reservationTime.startAt(), theme.name());
             throw new ConflictException("해당 날짜/시간/테마는 이미 예약되었습니다.");
         }
     }
 
-    private void validateNotAlreadyBookedByOthers(LocalDate date, LocalTime time, Theme theme, Long excludeId) {
-        if (reservationRepository.existsByDateAndTimeAndThemeId(date, time, theme.id(), excludeId, ReservationStatus.RESERVED)) {
-            log.warn("Reservation already exists: date={}, time={}, theme={}", date, time, theme.name());
+    private void validateNotAlreadyBookedExcluding(LocalDate date, ReservationTime reservationTime, Theme theme, Long excludeId) {
+        if (reservationRepository.existsByDateAndTimeIdAndThemeId(
+                date, reservationTime.id(), theme.id(), excludeId, ReservationStatus.RESERVED)) {
+            log.warn("Reservation already exists: date={}, time={}, theme={}", date, reservationTime.startAt(), theme.name());
             throw new ConflictException("해당 날짜/시간/테마는 이미 예약되었습니다.");
         }
     }
 
-    private void validateUserHasNoReservationAtSameTime(String name, LocalDate date, ReservationTime time) {
-        if (reservationRepository.existsByNameAndDateAndTime(name, date, time.startAt())) {
-            log.warn("User already has a reservation at the same time: name={}, date={}, time={}", name, date, time.startAt());
+    private void validateUserHasNoReservationAtSameTime(String name, LocalDate date, ReservationTime reservationTime) {
+        if (reservationRepository.existsByNameAndDateAndTimeId(name, date, reservationTime.id())) {
+            log.warn("User already has a reservation at the same time: name={}, date={}, time={}", name, date, reservationTime.startAt());
             throw new ConflictException("동일한 날짜와 시간에 예약이 존재합니다.");
         }
     }
