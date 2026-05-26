@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.domain.ReservationStatus;
@@ -121,14 +123,29 @@ public class JdbcReservationRepository implements ReservationRepository {
 
     @Override
     public Reservation save(Reservation reservation) {
+        String sql = """
+            INSERT INTO reservation (name, date, time_id, theme_id, status)
+            VALUES (:name, :date, :time_id, :theme_id, :status)
+            """;
         SqlParameterSource params = new MapSqlParameterSource()
                 .addValue("name", reservation.name())
                 .addValue("date", reservation.date())
                 .addValue("time_id", reservation.time().id())
                 .addValue("theme_id", reservation.theme().id())
                 .addValue("status", reservation.status().name());
-        Long savedId = simpleJdbcInsert.executeAndReturnKey(params).longValue();
-        return Reservation.load(savedId, reservation.name(), reservation.date(), reservation.time(), reservation.theme(), reservation.status());
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(sql, params, keyHolder, new String[]{"id"});
+        Long savedId = keyHolder.getKeyAs(Long.class);
+
+        return Reservation.load(
+                savedId,
+                reservation.name(),
+                reservation.date(),
+                reservation.time(),
+                reservation.theme(),
+                reservation.status()
+        );
     }
 
     @Override

@@ -30,8 +30,11 @@ CREATE TABLE IF NOT EXISTS reservation
     time_id  BIGINT       NOT NULL,
     theme_id BIGINT       NOT NULL,
     status   ENUM('RESERVED', 'CANCELED') NOT NULL,
+    reserved_slot_key BOOLEAN GENERATED ALWAYS AS (
+        CASE WHEN status = 'RESERVED' THEN TRUE ELSE NULL END
+        ),
     PRIMARY KEY (id),
     FOREIGN KEY (theme_id) REFERENCES theme (id),
     FOREIGN KEY (time_id) REFERENCES reservation_time (id),
-    CONSTRAINT uk_reservation_date_time_theme UNIQUE (date, theme_id, time_id)
+    CONSTRAINT uk_reserved_reservation_slot UNIQUE (date, theme_id, time_id, reserved_slot_key)
 );

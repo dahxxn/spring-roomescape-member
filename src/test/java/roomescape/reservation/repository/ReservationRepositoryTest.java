@@ -1,6 +1,8 @@
 package roomescape.reservation.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.domain.ReservationStatus;
@@ -105,4 +108,31 @@ class ReservationRepositoryTest {
         }
         return savedReservations;
     }
+
+
+    @Test
+    @DisplayName("같은 날짜/시간/테마에 예약중인 예약은 하나만 저장할 수 있다.")
+    void save_duplicate_reserved_reservation() {
+        // given
+        jdbcReservationRepository.save(Reservation.create(name, date1, reservationTime1, theme));
+
+        // when & then
+        assertThatThrownBy(() -> jdbcReservationRepository.save(
+                Reservation.create("브라운", date1, reservationTime1, theme)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @DisplayName("취소된 예약이 있는 날짜/시간/테마에는 다시 예약을 저장할 수 있다.")
+    void save_reserved_reservation_after_canceled_reservation() {
+        // given
+        Reservation saved = jdbcReservationRepository.save(Reservation.create(name, date1, reservationTime1, theme));
+        jdbcReservationRepository.updateStatus(saved.cancel());
+
+        // when & then
+        assertThatCode(() -> jdbcReservationRepository.save(
+                Reservation.create("브라운", date1, reservationTime1, theme)))
+                .doesNotThrowAnyException();
+    }
+
 }
