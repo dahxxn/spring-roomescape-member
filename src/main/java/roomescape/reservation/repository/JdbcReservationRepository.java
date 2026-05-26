@@ -198,17 +198,52 @@ public class JdbcReservationRepository implements ReservationRepository {
     }
 
     @Override
-    public boolean existsByNameAndDateAndTimeId(String name, LocalDate date, long timeId) {
+    public boolean existsByNameAndDateAndTimeId(
+            String name,
+            LocalDate date,
+            long timeId,
+            ReservationStatus status
+    ) {
         String sql = """
-                SELECT COUNT(*) FROM reservation
-                WHERE name = :name
-                  AND date = :date
-                  AND time_id = :time_id
-                """;
+            SELECT COUNT(*) FROM reservation
+            WHERE name = :name
+              AND date = :date
+              AND time_id = :time_id
+              AND status = :status
+            """;
         SqlParameterSource params = new MapSqlParameterSource()
                 .addValue("name", name)
                 .addValue("date", date)
-                .addValue("time_id", timeId);
+                .addValue("time_id", timeId)
+                .addValue("status", status.name());
+
+        Integer count = jdbcTemplate.queryForObject(sql, params, Integer.class);
+        return count != null && count > 0;
+    }
+
+    @Override
+    public boolean existsByNameAndDateAndTimeId(
+            String name,
+            LocalDate date,
+            long timeId,
+            long excludeId,
+            ReservationStatus status
+    ) {
+        String sql = """
+            SELECT COUNT(*) FROM reservation
+            WHERE name = :name
+              AND date = :date
+              AND time_id = :time_id
+              AND id != :excludeId
+              AND status = :status
+            """;
+        SqlParameterSource params = new MapSqlParameterSource()
+                .addValue("name", name)
+                .addValue("date", date)
+                .addValue("time_id", timeId)
+                .addValue("excludeId", excludeId)
+                .addValue("status", status.name());
+
         Integer count = jdbcTemplate.queryForObject(sql, params, Integer.class);
         return count != null && count > 0;
     }

@@ -84,6 +84,7 @@ class ReservationTimeServiceTest {
         // given
         ReservationTime time = reservationTimeService.create(LocalTime.of(12, 0));
         Theme theme = themeService.register("테마", "설명", "썸네일");
+        themeService.updateStatus(theme.id(), true);
         reservationService.create("한다", LocalDate.of(2099, 1, 1), time.id(), theme.id());
 
         // when & then

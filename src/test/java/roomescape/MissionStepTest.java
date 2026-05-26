@@ -134,6 +134,13 @@ class MissionStepTest {
                 .then().log().all()
                 .statusCode(201);
 
+        RestAssured.given().log().all()
+                .contentType(ContentType.JSON)
+                .body(Map.of("isActive", true))
+                .when().patch("/admin/themes/1")
+                .then().log().all()
+                .statusCode(200);
+
         Map<String, Object> reservation = new HashMap<>();
         String reservationName = "브라운";
         reservation.put("name", reservationName);

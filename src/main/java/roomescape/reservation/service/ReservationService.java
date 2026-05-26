@@ -51,6 +51,7 @@ public class ReservationService {
         ReservationTime reservationTime = findReservationTimeOrThrow(timeId);
         Theme theme = findThemeByIdOrThrow(themeId);
 
+        validateActiveTheme(theme);
         validateNotClosedDate(date);
         validateNotAlreadyBooked(date, reservationTime, theme);
         validateUserHasNoReservationAtSameTime(name, date, reservationTime);
@@ -80,11 +81,73 @@ public class ReservationService {
         ReservationTime newReservationTime = findReservationTimeOrThrow(newTimeId);
         validateNotClosedDate(newDate);
         validateNotAlreadyBookedExcluding(newDate, newReservationTime, reservation.theme(), id);
+        validateUserHasNoReservationAtSameTimeExcluding(
+                reservation.name(),
+                newDate,
+                newReservationTime,
+                id
+        );
 
         Reservation rescheduledReservation = reservation.rescheduled(newDate, newReservationTime);
         Reservation updatedReservation = reservationRepository.updateDateAndTime(rescheduledReservation);
-        log.info("Reservation changed: id={}, date={}, time={}", updatedReservation.id(), updatedReservation.date(), updatedReservation.time().startAt());
+        log.info(
+                "Reservation changed: id={}, date={}, time={}",
+                updatedReservation.id(),
+                updatedReservation.date(),
+                updatedReservation.time().startAt()
+        );
         return updatedReservation;
+    }
+
+    private void validateActiveTheme(Theme theme) {
+        if (!theme.isActive()) {
+            log.warn("Cannot reserve inactive theme: id={}, name={}", theme.id(), theme.name());
+            throw new IllegalArgumentException("예약할 수 없는 테마입니다.");
+        }
+    }
+
+    private void validateUserHasNoReservationAtSameTime(
+            String name,
+            LocalDate date,
+            ReservationTime reservationTime
+    ) {
+        if (reservationRepository.existsByNameAndDateAndTimeId(
+                name,
+                date,
+                reservationTime.id(),
+                ReservationStatus.RESERVED
+        )) {
+            log.warn(
+                    "User already has a reservation at the same time: name={}, date={}, time={}",
+                    name,
+                    date,
+                    reservationTime.startAt()
+            );
+            throw new ConflictException("동일한 날짜와 시간에 예약이 존재합니다.");
+        }
+    }
+
+    private void validateUserHasNoReservationAtSameTimeExcluding(
+            String name,
+            LocalDate date,
+            ReservationTime reservationTime,
+            Long excludeId
+    ) {
+        if (reservationRepository.existsByNameAndDateAndTimeId(
+                name,
+                date,
+                reservationTime.id(),
+                excludeId,
+                ReservationStatus.RESERVED
+        )) {
+            log.warn(
+                    "User already has a reservation at the same time: name={}, date={}, time={}",
+                    name,
+                    date,
+                    reservationTime.startAt()
+            );
+            throw new ConflictException("동일한 날짜와 시간에 예약이 존재합니다.");
+        }
     }
 
     @NonNull
@@ -141,13 +204,6 @@ public class ReservationService {
                 date, reservationTime.id(), theme.id(), excludeId, ReservationStatus.RESERVED)) {
             log.warn("Reservation already exists: date={}, time={}, theme={}", date, reservationTime.startAt(), theme.name());
             throw new ConflictException("해당 날짜/시간/테마는 이미 예약되었습니다.");
-        }
-    }
-
-    private void validateUserHasNoReservationAtSameTime(String name, LocalDate date, ReservationTime reservationTime) {
-        if (reservationRepository.existsByNameAndDateAndTimeId(name, date, reservationTime.id())) {
-            log.warn("User already has a reservation at the same time: name={}, date={}, time={}", name, date, reservationTime.startAt());
-            throw new ConflictException("동일한 날짜와 시간에 예약이 존재합니다.");
         }
     }
 }

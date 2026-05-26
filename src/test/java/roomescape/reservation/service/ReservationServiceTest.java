@@ -55,8 +55,12 @@ class ReservationServiceTest {
     void setup() {
         reservationTime1 = reservationTimeService.create(LocalTime.of(15, 40));
         reservationTime2 = reservationTimeService.create(LocalTime.of(16, 0));
-        theme1 = themeService.register("테마1", "설명1", "썸네일1");
-        theme2 = themeService.register("테마2", "설명2", "썸네일2");
+        theme1 = activate(themeService.register("테마1", "설명1", "썸네일1"));
+        theme2 = activate(themeService.register("테마2", "설명2", "썸네일2"));
+    }
+
+    private Theme activate(Theme theme) {
+        return themeService.updateStatus(theme.id(), true);
     }
 
     @Test
@@ -222,5 +226,46 @@ class ReservationServiceTest {
         // when & then
         assertThatThrownBy(() -> reservationService.change(wrongId, date1, reservationTime1.id()))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("비활성 테마는 예약할 수 없다.")
+    void create_inactive_theme() {
+        // given
+        Theme inactiveTheme = themeService.register("비활성 테마", "설명", "썸네일");
+
+        // when & then
+        assertThatThrownBy(() -> reservationService.create(
+                name,
+                date1,
+                reservationTime1.id(),
+                inactiveTheme.id()
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("취소된 예약은 같은 사용자 같은 시간 예약 검증에서 제외된다.")
+    void create_same_user_datetime_after_cancel() {
+        // given
+        Reservation saved = reservationService.create(name, date1, reservationTime1.id(), theme1.id());
+        reservationService.cancel(saved.id());
+
+        // when
+        Reservation actual = reservationService.create(name, date1, reservationTime1.id(), theme2.id());
+
+        // then
+        assertThat(actual.status()).isEqualTo(ReservationStatus.RESERVED);
+    }
+
+    @Test
+    @DisplayName("같은 사용자의 다른 예약과 같은 날짜/시간으로 변경할 수 없다.")
+    void change_duplicate_user_datetime() {
+        // given
+        reservationService.create(name, date1, reservationTime1.id(), theme1.id());
+        Reservation saved = reservationService.create(name, date1, reservationTime2.id(), theme2.id());
+
+        // when & then
+        assertThatThrownBy(() -> reservationService.change(saved.id(), date1, reservationTime1.id()))
+                .isInstanceOf(ConflictException.class);
     }
 }
